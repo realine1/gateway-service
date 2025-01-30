@@ -1,21 +1,26 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { Client, ClientTCP, Transport } from '@nestjs/microservices';
-import { CreateUserDto } from './users/dto/create-user.dto';
 import { lastValueFrom } from 'rxjs';
+import { CreateUserDto } from './create-user.dto';
 
 @Injectable()
-export class GatewayService {
+export class UserService {
   @Client({
     transport: Transport.TCP,
     options: {
-      host: 'localhost', // Docker container name for User-Service
-      port: 3002, // Port User-Service is listening on for TCP requests
+      host: 'localhost',
+      port: 3002,
     },
   })
   private client: ClientTCP;
 
   async getUserByUsername(username: string) {
-    return this.client.send({ cmd: 'get-user' }, username);
+    try {
+        const result = await lastValueFrom(this.client.send({ cmd: 'get-user' }, username))
+        return result
+    } catch (error) {
+        throw new BadRequestException(error.message);
+    }
   }
 
   async createUser(createUserDto: CreateUserDto) {
